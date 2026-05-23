@@ -1,90 +1,86 @@
 # PDF to DOCX Humanize Skill
 
-Turn a prepared PDF bundle into a polished DOCX workflow in Codex.
+中文优先说明：这是一个给 Codex CLI 使用的 skill。它适合把“已经准备好的 PDF 文件包”交给 Codex 处理，让 Codex 根据原 PDF、PDF 转出的 DOCX、MinerU 解析结果，组织一套更稳的 DOCX 重建、翻译、排版、审查和验证流程。
 
-This is a Codex skill for people who already have three local inputs for one document:
+English summary: this repository provides a Codex skill named `$pdf-to-docx-humanize` for prepared PDF bundles. It audits the bundle, drafts a task, plans the work, optionally runs the `humanize` review loop, and validates the final DOCX/PDF outputs.
 
-- the original PDF
-- a PDF-to-DOCX export
-- a MinerU extraction folder with the `.tex` file and figure/table/page screenshots
+## 这个仓库解决什么问题
 
-The skill asks Codex to inspect those files, write a concrete task draft, generate and refine an implementation plan, run a bounded review loop when `humanize` is available, and validate the final DOCX/PDF artifacts before reporting success.
+很多 PDF 转 Word 的结果看起来能打开，但真正阅读时会有这些问题：
 
-## What You Get
+- 正文排版错乱
+- 图表位置错位
+- 文字和图片重叠
+- 中文正文里出现大量不该有的空格
+- 目录、标题、页眉页脚、公式、表格、代码块不稳定
+- 只靠一次转换很难保证质量
 
-- A reusable Codex skill named `$pdf-to-docx-humanize`
-- A bundle audit script that finds PDFs, DOCX files, TeX files, and extracted images
-- A workflow for books, journal papers, theses, and other structured PDFs
-- Default review-loop limit of 2 rounds
-- Clear handling for the external `humanize` dependency
+这个 skill 的目标不是“神奇地一键完美转换所有 PDF”，而是给 Codex 一套稳定工作流：先识别输入文件，再写任务草稿，再规划，再执行，再审查，再验证。它尤其适合英文书籍、英文论文、SCI 论文、技术 PDF、学位论文、报告等结构化 PDF。
 
-This repository does not include any sample PDF, book, article, or converted document. It only contains the skill and installation helpers.
+## 你需要准备什么
 
-## Quick Start
+一个文件夹里最好放齐三类东西：
 
-### 1. Install Codex
+- 原始 PDF
+- PDF 转出来的 DOCX
+- MinerU 解压后的文件夹，里面通常有 `.tex` 文件、页面截图、图表截图、图片资源等
 
-Install and sign in to the Codex CLI first. If you do not have Codex yet, follow the official Codex installation guide for your system.
-
-After Codex works, restart your terminal once.
-
-### 2. Choose Full Mode or Fallback Mode
-
-This skill has two operating modes:
-
-| Mode | What you need | What happens |
-| --- | --- | --- |
-| Full mode | This skill plus the `humanize` skill family | Codex audits, drafts, plans, refines, runs the RLCR loop, and validates outputs. |
-| Fallback mode | Only this skill | Codex audits, drafts, plans, performs manual review passes, and validates outputs, but does not run the real RLCR loop. |
-
-Use full mode when possible. Use fallback mode only when you cannot install `humanize` yet.
-
-### 3. Check or Install the `humanize` Skill Family
-
-For the full workflow, this skill expects these Codex skills to exist:
-
-- `humanize`
-- `humanize-gen-plan`
-- `humanize-refine-plan`
-- `humanize-rlcr`
-
-Check on Windows PowerShell:
-
-```powershell
-Get-ChildItem $HOME\.codex\skills | Where-Object { $_.Name -like 'humanize*' }
-```
-
-Check on macOS or Linux:
-
-```bash
-ls ~/.codex/skills/humanize*
-```
-
-If all four folders exist, continue.
-
-If you do not have it, install `humanize` from its own distribution or repository first. In Codex, the usual pattern is:
+示例：
 
 ```text
-$skill-installer install <humanize GitHub URL or repository path>
+my-document/
+  source.pdf
+  source-converted.docx
+  MinerU_latex_source/
+    source.tex
+    images/
+      page_001.png
+      figure_001.png
+    tables/
+      table_001.png
 ```
 
-You need all four skill folders listed above. This repository intentionally does not vendor `humanize`, because `humanize` is a separate workflow system with its own scripts and release cycle.
+文件名不需要和示例完全一样。skill 会先扫描文件夹，自动识别可能的 PDF、DOCX、TeX 和图片资源。
 
-If `humanize` is missing, `$pdf-to-docx-humanize` can still audit the bundle and ask Codex to run a manual draft/plan/review fallback, but the real RLCR review loop requires `humanize`.
+不要把自己的 PDF、DOCX、论文、书籍或私人资料上传到这个公开仓库。这个仓库只用来安装 skill。
 
-RLCR means Ralph-Loop with Codex Review, an iterative loop where one pass implements the plan and another pass reviews the result.
+## 最快安装
 
-### 4. Install This Skill
-
-Recommended inside Codex:
+如果你已经会用 Codex CLI，并且你的 Codex 里有 `$skill-installer`，直接在 Codex 里运行：
 
 ```text
 $skill-installer install https://github.com/Rioneee/pdf-to-docx-humanize-skill/tree/main/skills/pdf-to-docx-humanize
 ```
 
-Then restart Codex so it picks up the new skill.
+然后重启 Codex。
 
-Manual install on Windows:
+进入你的 PDF 文件夹后，输入：
+
+```text
+$pdf-to-docx-humanize
+```
+
+## 从零开始安装
+
+### 1. 安装并登录 Codex CLI
+
+先确保你能正常打开 Codex CLI。CLI 是 Command Line Interface（命令行界面）的缩写。
+
+如果你还没有 Codex CLI，请先按官方方式安装并登录。安装完成后，重启一次终端。
+
+### 2. 安装本 skill
+
+推荐方式是在 Codex 里用 `$skill-installer`：
+
+```text
+$skill-installer install https://github.com/Rioneee/pdf-to-docx-humanize-skill/tree/main/skills/pdf-to-docx-humanize
+```
+
+安装后重启 Codex。
+
+如果你想手动安装，也可以先克隆本仓库。
+
+Windows PowerShell：
 
 ```powershell
 git clone https://github.com/Rioneee/pdf-to-docx-humanize-skill.git
@@ -92,7 +88,7 @@ cd pdf-to-docx-humanize-skill
 powershell -ExecutionPolicy Bypass -File scripts/install.ps1
 ```
 
-Manual install on macOS or Linux:
+macOS 或 Linux：
 
 ```bash
 git clone https://github.com/Rioneee/pdf-to-docx-humanize-skill.git
@@ -100,65 +96,57 @@ cd pdf-to-docx-humanize-skill
 bash scripts/install.sh
 ```
 
-Restart Codex after manual installation.
+手动安装后也要重启 Codex。
 
-### 5. Prepare Your Document Folder
+## 关于 humanize 依赖
 
-Create one local folder for one source document:
+这个 skill 有两种运行模式。
 
-```text
-my-paper/
-  original.pdf
-  original-converted.docx
-  MinerU_latex_.../
-    *.tex
-    images/
-    tables/
-    ...
+| 模式 | 需要什么 | 会发生什么 |
+| --- | --- | --- |
+| 完整模式 | 本 skill + `humanize` skill 家族 | Codex 会审计文件、写草稿、生成计划、精修计划、运行 RLCR 审查循环、验证输出。 |
+| 降级模式 | 只有本 skill | Codex 会审计文件、写草稿、写计划、做手动复查和输出验证，但不会运行真正的 RLCR 循环。 |
+
+RLCR 是 Ralph-Loop with Codex Review（带 Codex 审查的 Ralph 循环）的缩写，可以理解为“执行一轮，再让另一个审查步骤检查，再继续修”的自动化迭代流程。
+
+完整模式需要这四个 skill：
+
+- `humanize`
+- `humanize-gen-plan`
+- `humanize-refine-plan`
+- `humanize-rlcr`
+
+检查 Windows PowerShell 里是否已经安装：
+
+```powershell
+Get-ChildItem $HOME\.codex\skills | Where-Object { $_.Name -like 'humanize*' }
 ```
 
-The filenames do not have to match this example. The skill audits the folder and identifies likely roles.
+检查 macOS 或 Linux：
 
-Keep private PDFs local. You do not need to upload your document to this GitHub repository.
-
-### 6. Run the Skill
-
-Open Codex in the document folder and send:
-
-```text
-$pdf-to-docx-humanize
+```bash
+ls ~/.codex/skills/humanize*
 ```
 
-For a more explicit request:
+如果四个 skill 都存在，就可以使用完整模式。
 
-```text
-$pdf-to-docx-humanize Convert this prepared PDF bundle into a polished DOCX. Use the source PDF, converted DOCX, and MinerU extraction folder. Keep the RLCR maximum at 2 rounds.
-```
+如果没有 `humanize`，你仍然可以调用 `$pdf-to-docx-humanize`。它会走降级模式，但必须清楚：降级模式不等于真正跑过 `humanize-rlcr`。如果你追求更稳的质量闭环，建议先安装 `humanize`。
 
-Codex should then:
+本仓库没有直接内置 `humanize`，原因是 `humanize` 是独立工作流系统，有自己的脚本、审查逻辑和发布节奏。把它混进这个仓库反而会让用户难以更新和排错。
 
-1. Audit the folder.
-2. Create `draft.md`.
-3. Generate `plan.md`.
-4. Add any needed `CMT: ... ENDCMT` comments.
-5. Refine the plan.
-6. Run `humanize-rlcr` with at most 2 rounds when available.
-7. Validate the final DOCX/PDF.
-8. Report final files and remaining limitations.
+## 使用前检查清单
 
-## Beginner Checklist
+运行 `$pdf-to-docx-humanize` 前，建议确认：
 
-Before running the skill, check these items:
+- Codex CLI 能正常启动。
+- 重启 Codex 后能识别 `$pdf-to-docx-humanize`。
+- 当前文件夹里有原始 PDF。
+- 当前文件夹里有 PDF 转出的 DOCX，若没有也要在任务里说明。
+- MinerU 文件夹已经解压，不只是一个 `.zip` 压缩包。
+- MinerU 生成的图、表、页面截图没有被删除。
+- 如果要跑完整 RLCR，当前文件夹最好是一个本地 git 仓库，并且至少有一次提交。
 
-- Codex opens successfully.
-- `$pdf-to-docx-humanize` appears as an available skill after restart.
-- The document folder contains one original PDF.
-- The document folder contains one converted DOCX, if available.
-- The document folder contains the unpacked MinerU folder, not just the `.zip`.
-- If you want the full loop, the four `humanize*` skills are installed.
-- If RLCR is used, the document folder is a local git repository with at least one commit.
-
-To make a local git repository without publishing anything:
+如果你的 PDF 文件夹还不是 git 仓库，可以在该文件夹里执行：
 
 ```bash
 git init
@@ -166,73 +154,98 @@ git add .
 git commit -m "Initial document bundle"
 ```
 
-Do not push private or copyrighted PDFs to GitHub unless you have the right to publish them.
+这只是创建本地版本记录，不等于上传到 GitHub。不要把没有公开授权的 PDF 推送到公开仓库。
 
-## 中文快速开始
+## 怎么调用
 
-这个仓库提供一个 Codex skill：`$pdf-to-docx-humanize`。它适合你已经准备好了一个 PDF 处理文件夹的情况：
-
-- 原始 PDF
-- PDF 转出来的 DOCX
-- MinerU 解压后的文件夹，里面有 `.tex`、图片、表格截图等
-
-最简单流程：
-
-1. 先确保 Codex CLI 能正常打开。
-2. 如果要完整自动审查循环，先安装 `humanize`、`humanize-gen-plan`、`humanize-refine-plan`、`humanize-rlcr`。
-3. 在 Codex 里安装本 skill：
-
-```text
-$skill-installer install https://github.com/Rioneee/pdf-to-docx-humanize-skill/tree/main/skills/pdf-to-docx-humanize
-```
-
-4. 重启 Codex。
-5. 进入你的 PDF 文件夹。
-6. 在 Codex 里输入：
+进入你的 PDF 文件夹后，在 Codex 里输入：
 
 ```text
 $pdf-to-docx-humanize
 ```
 
-如果没有 `humanize`，这个 skill 仍然会尽量做审计、起草、规划和手动复查，但完整的 RLCR 自动审查循环必须依赖 `humanize`。
+如果你想把要求说得更清楚，可以这样写：
 
-不要把自己的 PDF 上传到这个公开仓库。这个仓库只是安装 skill 用的。
+```text
+$pdf-to-docx-humanize 请把当前文件夹里的 PDF 文件包处理成排版稳定、可阅读的 DOCX。优先参考原 PDF、PDF 转出的 DOCX，以及 MinerU 解压文件夹里的 tex、图片和表格截图。完整模式下 RLCR 最多 2 轮。
+```
 
-## What This Skill Does Not Do
+对于中文译文排版，你也可以加约束：
 
-- It does not download papers for you.
-- It does not include `humanize`.
-- It does not guarantee perfect OCR or translation.
-- It does not publish your PDF files.
-- It does not replace final human proofreading for important documents.
+```text
+$pdf-to-docx-humanize 重点避免中文正文内部出现多余空格，避免文字和图片重叠，图表尽量参考 MinerU 截图位置，输出前必须检查 DOCX 和 PDF 的阅读效果。
+```
 
-## Troubleshooting
+Codex 通常会按下面流程工作：
 
-`$pdf-to-docx-humanize` is not found:
+1. 审计当前文件夹，识别 PDF、DOCX、MinerU、TeX、图片和截图。
+2. 写 `draft.md`，说明任务目标、输入文件、输出文件、排版约束和风险。
+3. 调用或仿照 `humanize-gen-plan` 生成 `plan.md`。
+4. 必要时用 `CMT: ... ENDCMT` 形式给计划加修改意见。
+5. 调用或仿照 `humanize-refine-plan` 精修计划。
+6. 有 `humanize` 时运行 `humanize-rlcr`，默认最多 2 轮。
+7. 验证 DOCX 包结构、页面结构、图表位置、段落空格、页眉页脚、目录、参考文献等。
+8. 报告最终文件、通过的检查和残留限制。
 
-- Restart Codex after installation.
-- Check that the skill was copied to `~/.codex/skills/pdf-to-docx-humanize`.
-- On Windows, that is usually `%USERPROFILE%\.codex\skills\pdf-to-docx-humanize`.
+## 常见问题
 
-`humanize` is missing:
+### Codex 里找不到 `$pdf-to-docx-humanize`
 
-- Install the four `humanize*` skills from the `humanize` distribution.
-- Restart Codex.
-- Re-run `$pdf-to-docx-humanize`.
+先重启 Codex。
 
-RLCR refuses to start:
+然后检查 skill 是否安装到了这里：
 
-- RLCR usually requires a clean local git repository with at least one commit.
-- Commit the initial local bundle first.
-- Keep `.humanize/` out of public commits unless the `humanize` documentation says otherwise.
+```text
+~/.codex/skills/pdf-to-docx-humanize
+```
 
-The output DOCX layout is wrong:
+Windows 通常是：
 
-- Make sure the MinerU extraction folder is unpacked and visible in the same project folder.
-- Keep figure/table screenshots from MinerU.
-- Tell Codex the most important layout constraint directly, for example: "do not insert internal spaces inside Chinese body text" or "avoid floating body text boxes".
+```text
+%USERPROFILE%\.codex\skills\pdf-to-docx-humanize
+```
 
-## Repository Layout
+### 提示缺少 humanize
+
+这说明完整模式需要的 `humanize` skill 家族不全。
+
+你可以先继续使用降级模式，也可以先安装 `humanize`、`humanize-gen-plan`、`humanize-refine-plan`、`humanize-rlcr` 后再重启 Codex。
+
+### RLCR 启动失败
+
+常见原因是当前文件夹不是 git 仓库，或者还没有任何提交。
+
+可以先执行：
+
+```bash
+git init
+git add .
+git commit -m "Initial document bundle"
+```
+
+如果文件夹里有私人 PDF，不要把这个仓库推送到公开 GitHub。
+
+### DOCX 排版仍然不理想
+
+请明确告诉 Codex 你最在意的问题，例如：
+
+- 中文正文内部不能有多余空格
+- 图表不能和正文重叠
+- 不要使用浮动文本框承载正文
+- 表格优先用截图还是可编辑表格
+- 是否需要页眉页脚、目录、参考文献、公式编号
+
+PDF 转 DOCX 的质量很依赖原始 PDF 结构。复杂扫描件、双栏论文、公式密集文档、跨页表格，通常需要更多人工复核。
+
+## 这个 skill 不做什么
+
+- 不会替你下载论文或书籍。
+- 不会把你的 PDF 上传到本仓库。
+- 不保证 OCR（Optical Character Recognition，光学字符识别）一定完美。
+- 不保证所有翻译、公式、参考文献都无需人工校对。
+- 不内置 `humanize`，只负责和它协作。
+
+## 仓库结构
 
 ```text
 skills/pdf-to-docx-humanize/
@@ -249,15 +262,15 @@ docs/
   example-bundle.md
 ```
 
-## Development
+## 开发者校验
 
-Run validation locally:
+如果你修改了这个仓库，可以运行：
 
 ```bash
 python scripts/validate_repo.py
 python -m py_compile skills/pdf-to-docx-humanize/scripts/audit_bundle.py
 ```
 
-## License
+## 许可证
 
-MIT License. See `LICENSE`.
+MIT License。详见 `LICENSE`。
