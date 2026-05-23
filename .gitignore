@@ -1,0 +1,25 @@
+.DS_Store
+Thumbs.db
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Local Codex / humanize state
+.codex/
+.humanize/
+.humanize*/
+
+# Generated document outputs
+*.docx
+*.pdf
+*.zip
+*.7z
+*.rar
+
+# Keep repository metadata and skill source files only.
+!LICENSE
+!README.md

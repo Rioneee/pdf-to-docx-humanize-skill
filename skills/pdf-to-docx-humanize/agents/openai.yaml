@@ -1,0 +1,4 @@
+interface:
+  display_name: "PDF to DOCX Humanize"
+  short_description: "Convert prepared PDF bundles into polished DOCX workflows"
+  default_prompt: "Use $pdf-to-docx-humanize to audit the PDF bundle, draft the task, run humanize-gen-plan, humanize-refine-plan, and humanize-rlcr with max 2 rounds, then validate the polished DOCX."
