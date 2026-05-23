@@ -1,6 +1,10 @@
 # PDF to DOCX Humanize Skill
 
-中文优先说明：这是一个给 Codex CLI 使用的 skill。它适合把“已经准备好的 PDF 文件包”交给 Codex 处理，让 Codex 根据原 PDF、PDF 转出的 DOCX、MinerU 解析结果，组织一套更稳的 DOCX 重建、翻译、排版、审查和验证流程。
+中文优先说明：这是一个给 Codex CLI 使用的 skill，主要用于把一类英文 PDF 翻译、重排并整理成可阅读的中文文档。它适合英文书籍、英文论文、SCI 论文、技术报告、学位论文、说明书、白皮书等“文字和结构能被解析出来”的 PDF；不适合以整页图片为主的扫描件、拍照版 PDF、严重损坏的 PDF，或者需要先做大量 OCR（Optical Character Recognition，光学字符识别）的文档。
+
+这个 skill 不是只输出 DOCX。一次完整任务可能会产出翻译后的 DOCX、由 DOCX 导出的 PDF、样例文件、检查报告、任务草稿、执行计划、术语表、验证记录等。实际输出取决于原始文件质量、用户要求和 Codex 当前能使用的本地工具。
+
+使用它之前，用户需要先准备一个“PDF 文件包”：原始英文 PDF、PDF 转出来的 DOCX、以及 MinerU 解析结果文件夹。MinerU 是一个 PDF 文档解析工具，通常能把 PDF 解析成 `.tex` 文本、页面截图、图表截图、图片资源等，方便 Codex 对照原文结构放置图表、表格和特殊页面。`humanize` 是另一组 Codex skill，用于把任务拆成计划、执行和审查循环；本 skill 会优先调用 `humanize` 来提高质量闭环，没有 `humanize` 时也可以降级运行，但审查强度会下降。
 
 English summary: this repository provides a Codex skill named `$pdf-to-docx-humanize` for prepared PDF bundles. It audits the bundle, drafts a task, plans the work, optionally runs the `humanize` review loop, and validates the final DOCX/PDF outputs.
 
@@ -15,13 +19,13 @@ English summary: this repository provides a Codex skill named `$pdf-to-docx-huma
 - 目录、标题、页眉页脚、公式、表格、代码块不稳定
 - 只靠一次转换很难保证质量
 
-这个 skill 的目标不是“神奇地一键完美转换所有 PDF”，而是给 Codex 一套稳定工作流：先识别输入文件，再写任务草稿，再规划，再执行，再审查，再验证。它尤其适合英文书籍、英文论文、SCI 论文、技术 PDF、学位论文、报告等结构化 PDF。
+这个 skill 的目标不是“神奇地一键完美转换所有 PDF”，而是给 Codex 一套稳定工作流：先识别输入文件，再写任务草稿，再规划，再执行，再审查，再验证。它尤其适合需要从英文翻译成中文、同时保留图表和基本版式的结构化 PDF。
 
 ## 你需要准备什么
 
 一个文件夹里最好放齐三类东西：
 
-- 原始 PDF
+- 原始英文 PDF
 - PDF 转出来的 DOCX
 - MinerU 解压后的文件夹，里面通常有 `.tex` 文件、页面截图、图表截图、图片资源等
 
@@ -42,7 +46,7 @@ my-document/
 
 文件名不需要和示例完全一样。skill 会先扫描文件夹，自动识别可能的 PDF、DOCX、TeX 和图片资源。
 
-不要把自己的 PDF、DOCX、论文、书籍或私人资料上传到这个公开仓库。这个仓库只用来安装 skill。
+不要把自己的 PDF、DOCX、论文、书籍或私人资料上传到这个公开仓库。这个仓库只用来安装 skill。你的 PDF 文件包应当留在自己本机的任务文件夹里。
 
 ## 最快安装
 
@@ -170,6 +174,12 @@ $pdf-to-docx-humanize
 $pdf-to-docx-humanize 请把当前文件夹里的 PDF 文件包处理成排版稳定、可阅读的 DOCX。优先参考原 PDF、PDF 转出的 DOCX，以及 MinerU 解压文件夹里的 tex、图片和表格截图。完整模式下 RLCR 最多 2 轮。
 ```
 
+如果你希望最终同时导出 PDF，可以直接说明：
+
+```text
+$pdf-to-docx-humanize 请把英文 PDF 翻译成中文，输出可编辑 DOCX，并尽量同时导出一份用于阅读检查的 PDF。
+```
+
 对于中文译文排版，你也可以加约束：
 
 ```text
@@ -184,8 +194,9 @@ Codex 通常会按下面流程工作：
 4. 必要时用 `CMT: ... ENDCMT` 形式给计划加修改意见。
 5. 调用或仿照 `humanize-refine-plan` 精修计划。
 6. 有 `humanize` 时运行 `humanize-rlcr`，默认最多 2 轮。
-7. 验证 DOCX 包结构、页面结构、图表位置、段落空格、页眉页脚、目录、参考文献等。
-8. 报告最终文件、通过的检查和残留限制。
+7. 生成或整理最终产物，通常包括 DOCX，条件允许时也包括 PDF、样例文件、报告或术语表。
+8. 验证 DOCX/PDF 的包结构、页面结构、图表位置、段落空格、页眉页脚、目录、参考文献等。
+9. 报告最终文件、通过的检查和残留限制。
 
 ## 常见问题
 
@@ -236,6 +247,10 @@ git commit -m "Initial document bundle"
 - 是否需要页眉页脚、目录、参考文献、公式编号
 
 PDF 转 DOCX 的质量很依赖原始 PDF 结构。复杂扫描件、双栏论文、公式密集文档、跨页表格，通常需要更多人工复核。
+
+### 扫描件能不能用
+
+不建议直接用。这个 skill 面向“能解析出文字和结构”的英文 PDF。如果 PDF 本质上是扫描图片，应该先用专门 OCR 工具得到质量足够的文本、DOCX 或 MinerU 解析结果，再交给这个 skill。
 
 ## 这个 skill 不做什么
 
